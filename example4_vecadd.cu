@@ -41,6 +41,16 @@ __global__ void vecAddHybrid(const int *d_a, const int *d_b, int *d_c, int N) {
     }
 }
 
+// vec add and while
+// __global__ void vecAddWhile(const int *d_a, const int *d_b, int *d_c, int N) {
+//     int idx = threadIdx.x;
+//     int i = idx;
+//     while (i < N) {
+//         d_c[i] = d_a[i] + d_b[i];
+//         i += blockDim.x;
+//     }
+// }
+
 
 int main () {
     cudaDeviceReset();
