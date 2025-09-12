@@ -7,7 +7,7 @@ __global__ void vecAdd(const int *d_a, const int *d_b, int *d_c) {
 }
 
 int main () {
-
+    cudaDeviceReset();
     const int N = 256;
     const int size = N * sizeof(int);
 
@@ -38,6 +38,10 @@ int main () {
     printf("h_a[10]: %d\n", h_a[10]);
     printf("h_b[10]: %d\n", h_b[10]);
     printf("Result: %d\n", h_c[10]);
+
+    cudaFree(d_a);
+    cudaFree(d_b);
+    cudaFree(d_c);
 
     return 0;
 }
