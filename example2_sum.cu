@@ -21,6 +21,7 @@ int main() {
     a = 5;
     b = 7;
 
+
     // CPU -> GPU
     cudaMemcpy(d_a, &a, sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(d_b, &b, sizeof(int), cudaMemcpyHostToDevice);
@@ -29,7 +30,7 @@ int main() {
     add<<<1,1>>>(d_a, d_b, d_c);
 
     // GPU -> CPU
-    cudaMemcpy(&c, d_c, sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&c, d_c, sizeof(int), cudaMemcpyDeviceToHost); // Already calls cudaDeviceSynchronize() internally
     
     printf("Result of %d + %d = %d \n", a, b, c);
 
