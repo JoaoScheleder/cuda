@@ -1,6 +1,8 @@
 #include  "cuda_runtime.h"
 #include <stdio.h>
 
+
+// When N > Total number of threads, each thread processes multiple elements
 __global__ void vecAdd(const int *d_a, const int *d_b, int *d_c, int N) {
     // int idx = threadIdx.x; // Local Index, could lead to multiple threads processing the same element if N > blockDim.x
     // int stride = blockDim.x; // Local Stride, could lead to multiple threads processing the same element if N > blockDim.x
@@ -17,6 +19,28 @@ __global__ void vecAdd(const int *d_a, const int *d_b, int *d_c, int N) {
         d_c[i] = d_a[i] + d_b[i];
     }
 }
+
+// When N <= Total number of threads, each thread processes one element
+__global__ void simpleVecAdd(const int *d_a, const int *d_b, int *d_c) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;   // índice global
+    d_c[idx] = d_a[idx] + d_b[idx];
+}
+
+
+// Same as the generic vecAdd kernel but with an initial if condition to handle the first element, same speed as the generic one
+__global__ void vecAddHybrid(const int *d_a, const int *d_b, int *d_c, int N) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int stride = blockDim.x * gridDim.x;
+
+    if (idx < N) {
+        d_c[idx] = d_a[idx] + d_b[idx]; 
+    }
+
+    for (int i = idx + stride; i < N; i += stride) {
+        d_c[i] = d_a[i] + d_b[i];
+    }
+}
+
 
 int main () {
     cudaDeviceReset();
