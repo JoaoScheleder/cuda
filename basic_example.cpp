@@ -3,13 +3,12 @@
 
 
 __global__ void myKernel(void) {
-    printf("Hello From GPU");
+    printf("Hello From GPU \n");
 }   
 
 int main () {
-    printf("Hello from CPU");
-    // blocks, threads
+    // blocks, threads (max threads per block = 1024)
     myKernel<<<1,10>>>();
-    
+    printf("Hello from CPU \n");
     return 0;
 }
