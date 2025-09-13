@@ -1,4 +1,5 @@
 # CUDA Study Project
+![CUDA Logo](https://upload.wikimedia.org/wikipedia/commons/b/b9/Nvidia_CUDA_Logo.jpg)
 
 A study project in C++ using **CUDA** for NVIDIA GPUs. This project explores basic GPU programming concepts, including:
 
