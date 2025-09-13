@@ -15,20 +15,20 @@
 /// @param width 
 /// @param height 
 /// @return 
-__global__ void blurImageKernel(unsigned char* inputImage, unsigned char* outputImage, int width, int height) {
+__global__ void blurImageKernel(unsigned char* inputImage, unsigned char* outputImage, int width, int height, int radius) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (x >= width || y >= height) return;
 
-    int pixelIndex = (y * width + x) * 3; // Assuming 3 channels (RGB)
+    int pixelIndex = (y * width + x) * 3;
 
-    // Simple box blur kernel
     int r = 0, g = 0, b = 0;
     int count = 0;
 
-    for (int ky = -1; ky <= 1; ky++) {
-        for (int kx = -1; kx <= 1; kx++) {
+    // Use radius instead of hardcoded 1
+    for (int ky = -radius; ky <= radius; ky++) {
+        for (int kx = -radius; kx <= radius; kx++) {
             int nx = x + kx;
             int ny = y + ky;
 
@@ -50,6 +50,7 @@ __global__ void blurImageKernel(unsigned char* inputImage, unsigned char* output
 
 int main() {
     int width, height, channels;
+    int blurRadius = 32; 
     unsigned char* h_inputImage = stbi_load("input.jpg", &width, &height, &channels, 3); 
     // force 3 channels (RGB)
 
@@ -71,7 +72,7 @@ int main() {
     dim3 block(16, 16);
     dim3 grid((width + block.x - 1) / block.x, (height + block.y - 1) / block.y);
 
-    blurImageKernel<<<grid, block>>>(d_inputImage, d_outputImage, width, height);
+    blurImageKernel<<<grid, block>>>(d_inputImage, d_outputImage, width, height, blurRadius);
 
     cudaMemcpy(h_outputImage, d_outputImage, imageSize, cudaMemcpyDeviceToHost);
 
