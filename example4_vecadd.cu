@@ -1,7 +1,6 @@
 #include  "cuda_runtime.h"
 #include <stdio.h>
 
-
 // When N > Total number of threads, each thread processes multiple elements
 __global__ void vecAdd(const int *d_a, const int *d_b, int *d_c, int N) {
     // int idx = threadIdx.x; // Local Index, could lead to multiple threads processing the same element if N > blockDim.x
@@ -41,15 +40,16 @@ __global__ void vecAddHybrid(const int *d_a, const int *d_b, int *d_c, int N) {
     }
 }
 
-// vec add and while
-// __global__ void vecAddWhile(const int *d_a, const int *d_b, int *d_c, int N) {
-//     int idx = threadIdx.x;
-//     int i = idx;
-//     while (i < N) {
-//         d_c[i] = d_a[i] + d_b[i];
-//         i += blockDim.x;
-//     }
-// }
+// vec add and while for single SM (Streaming Multiprocessor), in case it have more SM's it will not work properly.
+// because blockIdx.x is considered in only one block (1 SM).
+__global__ void vecAddWhile(const int *d_a, const int *d_b, int *d_c, int N) {
+    int idx = threadIdx.x;
+    int i = idx;
+    while (i < N) {
+        d_c[i] = d_a[i] + d_b[i];
+        i += blockDim.x;
+    }
+}
 
 
 int main () {
