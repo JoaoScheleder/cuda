@@ -16,8 +16,6 @@ The project is designed for learning and experimentation. In the future, more ex
 - **C++ compiler** (supports C++11 or later)  
 - **CUDA Toolkit** (tested with CUDA 12.x)  
 - **NVIDIA GPU** with CUDA support  
-- **stb_image / stb_image_write** (included or downloaded from [https://github.com/nothings/stb](https://github.com/nothings/stb))  
-- **CMake** (optional, for building a more structured project)
 
 ---
 
