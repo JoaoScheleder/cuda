@@ -1,6 +1,8 @@
 #include <cuda_runtime.h>
 #include <stdio.h>
+#include <math.h>
 
+// blelloch scan kernel
 __global__ void scanKernel(int *input, int *output, int N)
 {
     extern __shared__ int temp[]; // Shared memory for scan operation
@@ -17,7 +19,6 @@ __global__ void scanKernel(int *input, int *output, int N)
     else
         temp[2 * thid + 1] = 0;
 
-    // Up-sweep (reduce) phase
     for (int d = N >> 1; d > 0; d >>= 1)
     {
         __syncthreads();
@@ -59,66 +60,83 @@ __global__ void scanKernel(int *input, int *output, int N)
         output[2 * thid + 1] = temp[2 * thid + 1];
 }
 
-__global__ void globalScanKernel(int *input, int *output, int N)
+// Simple scan kernel for verification
+__global__ void scanKernelSimple(const int *input, int *output, int N)
 {
-    // This kernel would implement a global scan using atomic operations
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < N)
-    {
-        // Perform an atomic addition to compute the prefix sum
-        int val = input[idx];
-        int sum = atomicAdd(&output[N], val); // Using output[N] as a temporary storage for the sum
-        output[idx] = sum;
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    if (idx < N) {
+        int sum = 0;
+        for (int i = 0; i < idx; i++) { // compute prefix sum directly
+            sum += input[i];
+        }
+        output[idx] = sum; // exclusive scan
     }
-    // Note: This is a simplified example and may not be efficient for large arrays.
 }
 
 int main()
 {
-    const int N = 1024;
-    int size = N * sizeof(int);
-    int h_input[N], h_output[N];
+    cudaDeviceReset();
 
-    // Initialize input data
-    for (int i = 0; i < N; i++)
-    {
-        h_input[i] = 1; // Example input
+    const int N = 1024;
+
+    // const int N = 1 << 20; // 1M elements for simple scan
+
+    size_t size = N * sizeof(int);
+
+    int *h_input  = (int*)malloc(size);
+    int *h_output = (int*)malloc(size);
+
+    if (!h_input || !h_output) {
+        printf("Host malloc failed!\n");
+        return -1;
     }
+
+    // Initialize input
+    for (int i = 0; i < N; i++)
+        h_input[i] = 1;
 
     int *d_input, *d_output;
-    cudaMalloc((void **)&d_input, size);
-    cudaMalloc((void **)&d_output, size);
+    cudaError_t err;
 
-    cudaMemcpy(d_input, h_input, size, cudaMemcpyHostToDevice);
+    err = cudaMalloc((void**)&d_input, size);
+    if (err != cudaSuccess) { printf("cudaMalloc d_input failed: %s\n", cudaGetErrorString(err)); return -1; }
+
+    err = cudaMalloc((void**)&d_output, size);
+    if (err != cudaSuccess) { printf("cudaMalloc d_output failed: %s\n", cudaGetErrorString(err)); return -1; }
+
+    err = cudaMemcpy(d_input, h_input, size, cudaMemcpyHostToDevice);
+    if (err != cudaSuccess) { printf("cudaMemcpy H2D failed: %s\n", cudaGetErrorString(err)); return -1; }
+
+    dim3 blockSize(N/2);
+    dim3 gridSize((N + blockSize.x - 1) / blockSize.x);
 
     cudaEvent_t start, stop;
-    float elapsedTime;
-
-    // Launch scan kernel
-    int threads = N / 2;
-
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
-    cudaEventRecord(start, 0);
+    cudaEventRecord(start);
 
-    scanKernel<<<1, threads, N * sizeof(int)>>>(d_input, d_output, N);
+    scanKernelSimple<<<gridSize, blockSize>>>(d_input, d_output, N);
+    // scanKernel<<<gridSize, blockSize, 2 * blockSize.x * sizeof(int)>>>(d_input, d_output, N);
 
-    cudaMemcpy(h_output, d_output, size, cudaMemcpyDeviceToHost);
-
-    cudaEventRecord(stop, 0);
+    cudaEventRecord(stop);
     cudaEventSynchronize(stop);
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, start, stop);
+    printf("Scan kernel execution time: %3.3f ms\n", milliseconds);
 
-    cudaEventElapsedTime(&elapsedTime, start, stop);
-    printf("Time for scanKernel: %f ms\n", elapsedTime);
+    err = cudaMemcpy(h_output, d_output, size, cudaMemcpyDeviceToHost);
+    if (err != cudaSuccess) { printf("cudaMemcpy D2H failed: %s\n", cudaGetErrorString(err)); return -1; }
 
-    // Print output
-    for (int i = 0; i < N; i++)
-    {
+    printf("Last 10 elements of output:\n");
+    for (int i = N-10; i < N; i++)
         printf("%d ", h_output[i]);
-    }
     printf("\n");
 
+    // Free memory
+    free(h_input);
+    free(h_output);
     cudaFree(d_input);
     cudaFree(d_output);
+
     return 0;
 }
