@@ -26,6 +26,21 @@ __global__ void parallelReduceKernel(const float *input, float *output, int N) {
     }
 }
 
+// Alternative kernel using atomic operations in global memory
+// The performance is generally worse due to contention on global memory
+__global__ void parallelReduceGlobalMemoryKernel(const float *input, float *output, int N) {
+    unsigned int tid = threadIdx.x;
+    unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    // Perform reduction directly in global memory
+    for (unsigned int s = blockDim.x / 2; s > 0; s >>= 1) {
+        if (tid < s && (i + s) < N) {
+            atomicAdd(&output[blockIdx.x], input[i + s]);
+        }
+        __syncthreads();
+    }
+}
+
 
 int main () {
 
