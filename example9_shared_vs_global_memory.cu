@@ -15,9 +15,10 @@ __global__ void stencilGlobal(const float *in, float *out, int N) {
 
 // Shared-memory optimized 1D 3-point stencil
 __global__ void stencilShared(const float *in, float *out, int N) {
+    // Allocate shared memory for the block
     extern __shared__ float s_in[];
 
-    int tid = threadIdx.x;
+    int tid = threadIdx.x; // unique thread index in the block
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     // Each block loads a tile of input with halo into shared memory
@@ -31,6 +32,8 @@ __global__ void stencilShared(const float *in, float *out, int N) {
     }
 
     __syncthreads();
+    // after sync, all threads can access shared memory
+    // wee will have s_in to access left, mid, right in all threads
 
     if (idx >= 1 && idx < N-1) {
         float left  = s_in[tid];     // left neighbor
