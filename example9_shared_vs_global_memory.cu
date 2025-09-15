@@ -2,19 +2,22 @@
 #include <stdio.h>
 
 // Naive global-memory 1D 3-point stencil
-__global__ void stencilGlobal(const float *in, float *out, int N) {
+__global__ void stencilGlobal(const float *in, float *out, int N)
+{
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= 1 && idx < N-1) {
+    if (idx >= 1 && idx < N - 1)
+    {
         // Each thread reads its neighbors from global memory
-        float left  = in[idx - 1];
-        float mid   = in[idx];
+        float left = in[idx - 1];
+        float mid = in[idx];
         float right = in[idx + 1];
         out[idx] = (left + mid + right) / 3.0f;
     }
 }
 
 // Shared-memory optimized 1D 3-point stencil
-__global__ void stencilShared(const float *in, float *out, int N) {
+__global__ void stencilShared(const float *in, float *out, int N)
+{
     // Allocate shared memory for the block
     extern __shared__ float s_in[];
 
@@ -23,33 +26,37 @@ __global__ void stencilShared(const float *in, float *out, int N) {
 
     // Each block loads a tile of input with halo into shared memory
     // We need blockDim.x + 2 elements for the halo
-    if (idx < N) {
-        s_in[tid+1] = in[idx]; // main element
+    if (idx < N)
+    {
+        s_in[tid + 1] = in[idx]; // main element
         if (tid == 0 && idx > 0)
-            s_in[0] = in[idx-1]; // left halo
-        if (tid == blockDim.x-1 && idx < N-1)
-            s_in[blockDim.x+1] = in[idx+1]; // right halo
+            s_in[0] = in[idx - 1]; // left halo
+        if (tid == blockDim.x - 1 && idx < N - 1)
+            s_in[blockDim.x + 1] = in[idx + 1]; // right halo
     }
 
     __syncthreads();
     // after sync, all threads can access shared memory
     // wee will have s_in to access left, mid, right in all threads
 
-    if (idx >= 1 && idx < N-1) {
-        float left  = s_in[tid];     // left neighbor
-        float mid   = s_in[tid+1];   // self
-        float right = s_in[tid+2];   // right neighbor
+    if (idx >= 1 && idx < N - 1)
+    {
+        float left = s_in[tid];      // left neighbor
+        float mid = s_in[tid + 1];   // self
+        float right = s_in[tid + 2]; // right neighbor
         out[idx] = (left + mid + right) / 3.0f;
     }
 }
 
-int main() {
+int main()
+{
     const int N = 1 << 20; // 1M elements
     size_t size = N * sizeof(float);
-    float *h_in  = (float*)malloc(size);
-    float *h_out = (float*)malloc(size);
+    float *h_in = (float *)malloc(size);
+    float *h_out = (float *)malloc(size);
 
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < N; i++)
+    {
         h_in[i] = (float)i;
     }
 

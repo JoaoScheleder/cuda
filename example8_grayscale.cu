@@ -10,12 +10,13 @@
 
 #include <math.h>
 
-
-__global__ void grayscaleKernel(unsigned char* inputImage, unsigned char* outputImage, int width, int height) {
+__global__ void grayscaleKernel(unsigned char *inputImage, unsigned char *outputImage, int width, int height)
+{
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (x >= width || y >= height) return;
+    if (x >= width || y >= height)
+        return;
 
     int pixelIndex = (y * width + x) * 3;
 
@@ -26,28 +27,30 @@ __global__ void grayscaleKernel(unsigned char* inputImage, unsigned char* output
     // Using luminosity method for better grayscale representation
     unsigned char gray = static_cast<unsigned char>(0.21f * r + 0.72f * g + 0.07f * b);
 
-    outputImage[pixelIndex]     = gray;
+    outputImage[pixelIndex] = gray;
     outputImage[pixelIndex + 1] = gray;
     outputImage[pixelIndex + 2] = gray;
 }
 
-int main () {
+int main()
+{
     int width, height, channels;
 
-    unsigned char* h_inputImage = stbi_load("input.jpg", &width, &height, &channels, 3);
+    unsigned char *h_inputImage = stbi_load("input.jpg", &width, &height, &channels, 3);
 
-    if (h_inputImage == nullptr) {
+    if (h_inputImage == nullptr)
+    {
         printf("Error loading image\n");
         return -1;
     }
 
     size_t imageSize = width * height * 3 * sizeof(unsigned char);
 
-    unsigned char* h_outputImage = (unsigned char*)malloc(imageSize);
+    unsigned char *h_outputImage = (unsigned char *)malloc(imageSize);
 
     unsigned char *d_inputImage, *d_outputImage;
-    cudaMalloc((void**)&d_inputImage, imageSize);
-    cudaMalloc((void**)&d_outputImage, imageSize);
+    cudaMalloc((void **)&d_inputImage, imageSize);
+    cudaMalloc((void **)&d_outputImage, imageSize);
 
     cudaMemcpy(d_inputImage, h_inputImage, imageSize, cudaMemcpyHostToDevice);
 

@@ -8,13 +8,14 @@
 
 #include <stdio.h>
 
-
-__global__ void gaussianBlurKernel(unsigned char* inputImage, unsigned char* outputImage,
-                                   int width, int height, int radius, float sigma) {
+__global__ void gaussianBlurKernel(unsigned char *inputImage, unsigned char *outputImage,
+                                   int width, int height, int radius, float sigma)
+{
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (x >= width || y >= height) return;
+    if (x >= width || y >= height)
+        return;
 
     int pixelIndex = (y * width + x) * 3;
 
@@ -22,17 +23,20 @@ __global__ void gaussianBlurKernel(unsigned char* inputImage, unsigned char* out
     float weightSum = 0.0f;
 
     // Precompute Gaussian weights
-    for (int ky = -radius; ky <= radius; ky++) {
-        for (int kx = -radius; kx <= radius; kx++) {
+    for (int ky = -radius; ky <= radius; ky++)
+    {
+        for (int kx = -radius; kx <= radius; kx++)
+        {
             int nx = x + kx;
             int ny = y + ky;
 
-            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+            if (nx >= 0 && nx < width && ny >= 0 && ny < height)
+            {
                 // Compute Gaussian weight
                 float distance = kx * kx + ky * ky;
                 // using expf for better performance on GPU
                 float weight = expf(-distance / (2.0f * sigma * sigma));
-                
+
                 int nIndex = (ny * width + nx) * 3;
                 r += inputImage[nIndex] * weight;
                 g += inputImage[nIndex + 1] * weight;
@@ -43,26 +47,27 @@ __global__ void gaussianBlurKernel(unsigned char* inputImage, unsigned char* out
     }
 
     // Normalize
-    outputImage[pixelIndex]     = (unsigned char)(r / weightSum);
+    outputImage[pixelIndex] = (unsigned char)(r / weightSum);
     outputImage[pixelIndex + 1] = (unsigned char)(g / weightSum);
     outputImage[pixelIndex + 2] = (unsigned char)(b / weightSum);
 }
 
-
-int main () {
+int main()
+{
     int width, height, channels;
-    int blurRadius = 16; 
-    unsigned char* h_inputImage = stbi_load("input.jpg", &width, &height, &channels, 3); 
+    int blurRadius = 16;
+    unsigned char *h_inputImage = stbi_load("input.jpg", &width, &height, &channels, 3);
     // force 3 channels (RGB)
 
-    if (!h_inputImage) {
+    if (!h_inputImage)
+    {
         printf("Failed to load image!\n");
         return -1;
     }
 
     size_t imageSize = width * height * 3;
 
-    unsigned char *h_outputImage = (unsigned char*)malloc(imageSize);
+    unsigned char *h_outputImage = (unsigned char *)malloc(imageSize);
 
     unsigned char *d_inputImage, *d_outputImage;
     cudaMalloc(&d_inputImage, imageSize);

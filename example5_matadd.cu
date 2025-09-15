@@ -1,7 +1,8 @@
 #include "cuda_runtime.h"
 #include <stdio.h>
 
-__global__ void matAdd(const int *d_a, const int *d_b, int *d_c, int rows, int cols) {
+__global__ void matAdd(const int *d_a, const int *d_b, int *d_c, int rows, int cols)
+{
     // Correct global row and column calculation
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -10,24 +11,28 @@ __global__ void matAdd(const int *d_a, const int *d_b, int *d_c, int rows, int c
     int strideRow = blockDim.y * gridDim.y;
     int strideCol = blockDim.x * gridDim.x;
 
-    for (int i = row; i < rows; i += strideRow) {
-        for (int j = col; j < cols; j += strideCol) {
+    for (int i = row; i < rows; i += strideRow)
+    {
+        for (int j = col; j < cols; j += strideCol)
+        {
             d_c[i * cols + j] = d_a[i * cols + j] + d_b[i * cols + j];
         }
     }
 }
 
-int main() {
+int main()
+{
     int rows = 4;
     int cols = 6;
 
     // Allocate host matrices
-    int *h_a = (int*)malloc(rows * cols * sizeof(int));
-    int *h_b = (int*)malloc(rows * cols * sizeof(int));
-    int *h_c = (int*)malloc(rows * cols * sizeof(int));
+    int *h_a = (int *)malloc(rows * cols * sizeof(int));
+    int *h_b = (int *)malloc(rows * cols * sizeof(int));
+    int *h_c = (int *)malloc(rows * cols * sizeof(int));
 
     // Initialize host matrices
-    for (int i = 0; i < rows * cols; i++) {
+    for (int i = 0; i < rows * cols; i++)
+    {
         h_a[i] = i;
         h_b[i] = i;
     }
@@ -42,7 +47,7 @@ int main() {
     cudaMemcpy(d_b, h_b, rows * cols * sizeof(int), cudaMemcpyHostToDevice);
 
     // Define block and grid sizes
-    dim3 block(16, 16);  // 16x16 threads per block
+    dim3 block(16, 16); // 16x16 threads per block
     dim3 grid((cols + block.x - 1) / block.x, (rows + block.y - 1) / block.y);
 
     printf("Grid dimensions: (%d, %d), Block dimensions: (%d, %d)\n", grid.x, grid.y, block.x, block.y);
@@ -53,8 +58,10 @@ int main() {
     cudaMemcpy(h_c, d_c, rows * cols * sizeof(int), cudaMemcpyDeviceToHost);
 
     // Print result
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
+    for (int i = 0; i < rows; i++)
+    {
+        for (int j = 0; j < cols; j++)
+        {
             printf("%d ", h_c[i * cols + j]);
         }
         printf("\n");

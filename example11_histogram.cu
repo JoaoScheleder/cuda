@@ -1,24 +1,26 @@
 #include <cuda_runtime.h>
 #include <stdio.h>
 
-
-
-
-__global__ void atomicHistogramKernel(int *Histogram, const int * data, int N) {
+__global__ void atomicHistogramKernel(int *Histogram, const int *data, int N)
+{
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < N) {
+    if (idx < N)
+    {
         atomicAdd(&Histogram[data[idx]], 1);
     }
 }
 
-__global__ void naiveHistogramKernel(int *Histogram, const int * data, int N) {
+__global__ void naiveHistogramKernel(int *Histogram, const int *data, int N)
+{
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < N) {
+    if (idx < N)
+    {
         Histogram[data[idx]] += 1; // This can cause race conditions
     }
 }
 
-int main () {
+int main()
+{
 
     const int N = 1 << 20; // 1M elements
 
@@ -29,7 +31,8 @@ int main () {
     cudaMalloc(&d_histogram, 256 * sizeof(int));
 
     // Initialize input data
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < N; i++)
+    {
         h_data[i] = rand() % 256;
     }
 
@@ -47,7 +50,8 @@ int main () {
     cudaMemcpy(h_histogram, d_histogram, 256 * sizeof(int), cudaMemcpyDeviceToHost);
 
     // Print histogram
-    for (int i = 0; i < 256; i++) {
+    for (int i = 0; i < 256; i++)
+    {
         printf("Value %d: Count %d\n", i, h_histogram[i]);
     }
 
@@ -56,7 +60,6 @@ int main () {
     cudaFree(d_histogram);
     free(h_data);
     free(h_histogram);
-
 
     return 0;
 }

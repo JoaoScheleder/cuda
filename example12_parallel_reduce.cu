@@ -1,9 +1,8 @@
 #include <cuda_runtime.h>
 #include <stdio.h>
 
-
-
-__global__ void parallelReduceKernel(const float *input, float *output, int N) {
+__global__ void parallelReduceKernel(const float *input, float *output, int N)
+{
     extern __shared__ float sdata[];
     unsigned int tid = threadIdx.x;
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -13,36 +12,42 @@ __global__ void parallelReduceKernel(const float *input, float *output, int N) {
     __syncthreads();
 
     // Perform reduction in shared memory
-    for (unsigned int s = blockDim.x / 2; s > 0; s >>= 1) {
-        if (tid < s) {
+    for (unsigned int s = blockDim.x / 2; s > 0; s >>= 1)
+    {
+        if (tid < s)
+        {
             sdata[tid] += sdata[tid + s];
         }
         __syncthreads();
     }
 
     // Write result for this block to global memory
-    if (tid == 0) {
+    if (tid == 0)
+    {
         output[blockIdx.x] = sdata[0];
     }
 }
 
 // Alternative kernel using atomic operations in global memory
 // The performance is generally worse due to contention on global memory
-__global__ void parallelReduceGlobalMemoryKernel(const float *input, float *output, int N) {
+__global__ void parallelReduceGlobalMemoryKernel(const float *input, float *output, int N)
+{
     unsigned int tid = threadIdx.x;
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
 
     // Perform reduction directly in global memory
-    for (unsigned int s = blockDim.x / 2; s > 0; s >>= 1) {
-        if (tid < s && (i + s) < N) {
+    for (unsigned int s = blockDim.x / 2; s > 0; s >>= 1)
+    {
+        if (tid < s && (i + s) < N)
+        {
             atomicAdd(&output[blockIdx.x], input[i + s]);
         }
         __syncthreads();
     }
 }
 
-
-int main () {
+int main()
+{
 
     const int N = 1 << 20; // 1M elements
     const int blockSize = 256;
@@ -53,7 +58,8 @@ int main () {
     float *h_output = (float *)malloc(sizeof(float));
 
     // Initialize input data
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < N; i++)
+    {
         h_input[i] = 1.0f; // For simplicity, all elements are 1.0
     }
 
@@ -74,7 +80,6 @@ int main () {
 
     printf("Sum: %f\n", h_output[0]);
 
-
     // Free memory
     free(h_input);
     free(h_intermediate);
@@ -84,5 +89,4 @@ int main () {
     cudaFree(d_output);
 
     return 0;
-
 }
