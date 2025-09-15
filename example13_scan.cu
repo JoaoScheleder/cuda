@@ -59,10 +59,12 @@ __global__ void scanKernel(int *input, int *output, int N)
         output[2 * thid + 1] = temp[2 * thid + 1];
 }
 
-__global__ void globalScanKernel(int *input, int *output, int N) {
+__global__ void globalScanKernel(int *input, int *output, int N)
+{
     // This kernel would implement a global scan using atomic operations
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < N) {
+    if (idx < N)
+    {
         // Perform an atomic addition to compute the prefix sum
         int val = input[idx];
         int sum = atomicAdd(&output[N], val); // Using output[N] as a temporary storage for the sum
@@ -89,11 +91,25 @@ int main()
 
     cudaMemcpy(d_input, h_input, size, cudaMemcpyHostToDevice);
 
+    cudaEvent_t start, stop;
+    float elapsedTime;
+
     // Launch scan kernel
     int threads = N / 2;
+
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventRecord(start, 0);
+
     scanKernel<<<1, threads, N * sizeof(int)>>>(d_input, d_output, N);
 
     cudaMemcpy(h_output, d_output, size, cudaMemcpyDeviceToHost);
+
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+
+    cudaEventElapsedTime(&elapsedTime, start, stop);
+    printf("Time for scanKernel: %f ms\n", elapsedTime);
 
     // Print output
     for (int i = 0; i < N; i++)
